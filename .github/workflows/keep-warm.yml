@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Wake the free Render instance
         run: |
-          curl -fsS --max-time 30 https://YOUR-APP.onrender.com/health || true
+          curl -fsS --max-time 30 https://clinic-booking-api-1rjj.onrender.com/health || true

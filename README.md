@@ -3,7 +3,7 @@
 Task 1 of the Koya Cohort 4 assessment: an API that lets patients book
 appointment slots, plus a simple web page that uses it.
 
-- **Live site (web page + API):** `https://<your-app>.onrender.com`
+- **Live site (web page + API):** `https://clinic-booking-api-1rjj.onrender.com`
 - **API key:** `clinic-1a2922744d69fff2b598f9275b1b3ba52d55f17b4711c95e`
   (sent on every request as the `X-API-Key` header)
 
