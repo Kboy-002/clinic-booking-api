@@ -84,6 +84,7 @@ function createApp() {
     res.set('Access-Control-Allow-Headers', 'Content-Type, X-API-Key, Idempotency-Key');
     res.set('Access-Control-Expose-Headers', 'Retry-After');
     res.set('Access-Control-Max-Age', '86400');
+    res.set('Cache-Control', 'no-store');
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
   });

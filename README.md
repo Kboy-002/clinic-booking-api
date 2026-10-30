@@ -57,6 +57,11 @@ Extra: `GET /` serves the web page, `GET /health` is a plain liveness check.
 - **Timestamps:** slot `start`/`end` are echoed back exactly as sent in
   `/reset`; only parsed values are used for sorting and the "already started"
   check.
+- **Web page never looks bare:** at boot, an empty calendar is filled with 12
+  demo slots across three providers. Any `POST /reset` replaces them, so
+  automated checks that publish their own slots are unaffected.
+- **No stale pages:** every response carries `Cache-Control: no-store`, so a
+  browser always shows the live slot list.
 
 ## Run locally
 
