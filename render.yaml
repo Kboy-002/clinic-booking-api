@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: clinic-booking-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: API_KEY
+        value: clinic-1a2922744d69fff2b598f9275b1b3ba52d55f17b4711c95e

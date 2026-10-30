@@ -1,0 +1,22 @@
+{
+  "name": "clinic-booking-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Clinic booking API and web page (Koya Cohort 4 assessment, Task 1)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/api.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "express": "^4.21.2"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
+  }
+}

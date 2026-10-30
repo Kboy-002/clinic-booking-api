@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greenfield Clinic — Book an appointment</title>
+<style>
+  :root {
+    --ink: #1d2733;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --accent: #0f766e;
+    --accent-dark: #115e59;
+    --danger: #b91c1c;
+    --warn-bg: #fef3c7;
+    --ok-bg: #dcfce7;
+    --ok-ink: #166534;
+    --bad-bg: #fee2e2;
+    --bad-ink: #991b1b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.5;
+  }
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 28px 20px;
+  }
+  header .wrap { max-width: 920px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 26px; }
+  header p { margin: 6px 0 0; opacity: 0.9; }
+  main { max-width: 920px; margin: 24px auto; padding: 0 20px; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 22px;
+  }
+  h2 { margin: 0 0 12px; font-size: 19px; }
+  .slot {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .slot:last-child { border-bottom: none; }
+  .slot .when { flex: 1; }
+  .slot .who { color: var(--muted); font-size: 14px; }
+  .badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.free { background: var(--ok-bg); color: var(--ok-ink); }
+  .badge.taken { background: var(--bad-bg); color: var(--bad-ink); }
+  .badge.state { background: #e0e7ff; color: #3730a3; }
+  button {
+    font: inherit;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  button:hover { background: var(--accent-dark); }
+  button:disabled { background: #cbd5e1; cursor: not-allowed; }
+  button.ghost {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--line);
+  }
+  button.ghost:hover { background: var(--bad-bg); }
+  form { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 0; }
+  input {
+    font: inherit;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    min-width: 220px;
+    flex: 1;
+  }
+  .confirm {
+    background: var(--ok-bg);
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .confirm h3 { margin: 0 0 8px; }
+  .confirm dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+  .confirm dt { color: var(--ok-ink); font-weight: 600; }
+  .confirm dd { margin: 0; }
+  .notice {
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 12px 0 0;
+    background: var(--warn-bg);
+    color: #92400e;
+  }
+  .notice.error { background: var(--bad-bg); color: var(--bad-ink); }
+  .empty { color: var(--muted); }
+  .booking-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .booking-row:last-child { border-bottom: none; }
+  .booking-row .ref { font-family: Consolas, monospace; font-size: 12px; color: var(--muted); }
+  .muted { color: var(--muted); font-size: 14px; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 8px 20px 32px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Greenfield Clinic</h1>
+    <p>Pick an open slot, book it in seconds, and see your confirmation.</p>
+  </div>
+</header>
+
+<main>
+  <section id="slots-section">
+    <h2>Available slots</h2>
+    <div id="slots"><p class="empty">Loading slots…</p></div>
+    <div id="book-form-wrap"></div>
+    <div id="booking-confirm"></div>
+    <div id="slots-notice"></div>
+  </section>
+
+  <section>
+    <h2>My bookings</h2>
+    <p class="muted">Look up every booking made with your email address.</p>
+    <form id="lookup-form">
+      <input id="lookup-email" type="email" placeholder="you@example.com" required>
+      <button type="submit">Find bookings</button>
+    </form>
+    <div id="lookup-notice"></div>
+    <div id="my-bookings"></div>
+    <button id="more-btn" style="display:none; margin-top:12px;">Show more</button>
+  </section>
+</main>
+
+<footer>Powered by the clinic booking API · bookings persist on the server</footer>
+
+<script>
+  const API_KEY = '__API_KEY__';
+  let slots = [];
+  let lookupEmail = '';
+  let nextCursor = null;
+
+  function fmt(iso) {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, {
+      weekday: 'short', day: 'numeric', month: 'short',
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  function notice(target, message, isError) {
+    const el = document.getElementById(target);
+    el.innerHTML = message ? '<div class="notice' + (isError ? ' error' : '') + '">' + message + '</div>' : '';
+  }
+
+  async function api(path, options = {}) {
+    const res = await fetch(path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY,
+        ...(options.headers || {}),
+      },
+    });
+    let data = null;
+    try { data = await res.json(); } catch (_) { /* no body */ }
+    return { status: res.status, data };
+  }
+
+  // ---- slots -------------------------------------------------------------
+
+  async function loadSlots() {
+    const { status, data } = await api('/slots');
+    const wrap = document.getElementById('slots');
+    if (status !== 200) {
+      wrap.innerHTML = '<p class="empty">Could not load slots.</p>';
+      return;
+    }
+    slots = data.slots || [];
+    renderSlots();
+  }
+
+  function renderSlots() {
+    const wrap = document.getElementById('slots');
+    if (!slots.length) {
+      wrap.innerHTML = '<p class="empty">No slots have been published yet.</p>';
+      return;
+    }
+    wrap.innerHTML = slots.map((s) => (
+      '<div class="slot">' +
+        '<div class="when"><strong>' + fmt(s.start) + '</strong> – ' + fmt(s.end) +
+          '<div class="who">' + s.provider + '</div></div>' +
+        (s.available
+          ? '<span class="badge free">Available</span><button data-book="' + s.id + '">Book</button>'
+          : '<span class="badge taken">Booked</span>') +
+      '</div>'
+    )).join('');
+
+    wrap.querySelectorAll('button[data-book]').forEach((btn) => {
+      btn.addEventListener('click', () => showBookingForm(btn.getAttribute('data-book')));
+    });
+  }
+
+  function showBookingForm(slotId) {
+    const slot = slots.find((s) => s.id === slotId);
+    const wrap = document.getElementById('book-form-wrap');
+    notice('booking-confirm', '');
+    wrap.innerHTML =
+      '<form id="book-form">' +
+        '<strong>Booking ' + fmt(slot.start) + ' with ' + slot.provider + '</strong>' +
+        '<input id="book-name" type="text" placeholder="Your full name" required>' +
+        '<input id="book-email" type="email" placeholder="you@example.com" required>' +
+        '<button type="submit">Confirm booking</button>' +
+        '<button type="button" class="ghost" id="book-cancel">Dismiss</button>' +
+      '</form>';
+    document.getElementById('book-cancel').addEventListener('click', () => { wrap.innerHTML = ''; });
+    document.getElementById('book-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('book-name').value;
+      const email = document.getElementById('book-email').value;
+      const { status, data } = await api('/bookings', {
+        method: 'POST',
+        body: JSON.stringify({ slot_id: slotId, name, email }),
+      });
+      wrap.innerHTML = '';
+      if (status === 201) {
+        showConfirmation(data);
+        loadSlots();
+      } else {
+        notice('slots-notice', (data && data.error) || 'Booking failed (' + status + ')', true);
+        loadSlots();
+      }
+    });
+    document.getElementById('book-name').focus();
+  }
+
+  function showConfirmation(b) {
+    const slot = slots.find((s) => s.id === b.slot_id) || {};
+    document.getElementById('booking-confirm').innerHTML =
+      '<div class="confirm">' +
+        '<h3>Booking confirmed ✓</h3>' +
+        '<dl>' +
+          '<dt>Reference</dt><dd>' + b.id + '</dd>' +
+          '<dt>When</dt><dd>' + (slot.start ? fmt(slot.start) + ' – ' + fmt(slot.end) : b.slot_id) + '</dd>' +
+          '<dt>Provider</dt><dd>' + (slot.provider || '—') + '</dd>' +
+          '<dt>Name</dt><dd>' + b.name + '</dd>' +
+          '<dt>Email</dt><dd>' + b.email + '</dd>' +
+          '<dt>Status</dt><dd>' + b.status + '</dd>' +
+        '</dl>' +
+      '</div>';
+    document.getElementById('booking-confirm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ---- my bookings --------------------------------------------------------
+
+  document.getElementById('lookup-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    lookupEmail = document.getElementById('lookup-email').value.trim();
+    document.getElementById('my-bookings').innerHTML = '';
+    notice('lookup-notice', '');
+    loadMyBookings(null);
+  });
+
+  async function loadMyBookings(cursor) {
+    const params = new URLSearchParams({ email: lookupEmail });
+    if (cursor) params.set('cursor', cursor);
+    const { status, data } = await api('/bookings?' + params.toString());
+    if (status !== 200) {
+      notice('lookup-notice', (data && data.error) || 'Lookup failed (' + status + ')', true);
+      return;
+    }
+    nextCursor = data.next_cursor;
+    renderMyBookings(data.bookings || [], cursor === null);
+    document.getElementById('more-btn').style.display = nextCursor ? '' : 'none';
+    if (!(data.bookings || []).length && cursor === null) {
+      notice('lookup-notice', 'No bookings found for that email address.');
+    }
+  }
+
+  function renderMyBookings(list, replace) {
+    const wrap = document.getElementById('my-bookings');
+    const html = list.map((b) => {
+      const slot = slots.find((s) => s.id === b.slot_id) || {};
+      return '<div class="booking-row">' +
+        '<div style="flex:1">' +
+          '<strong>' + (slot.provider || b.slot_id) + '</strong> · ' +
+          (slot.start ? fmt(slot.start) : b.slot_id) +
+          '<div class="ref">' + b.id + ' · ' + b.name + '</div>' +
+        '</div>' +
+        '<span class="badge state">' + b.status + '</span>' +
+        (b.status === 'confirmed'
+          ? '<button class="ghost" data-cancel="' + b.id + '">Cancel</button>'
+          : '') +
+      '</div>';
+    }).join('');
+    wrap.innerHTML = replace ? html : wrap.innerHTML + html;
+
+    wrap.querySelectorAll('button[data-cancel]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-cancel');
+        const { status, data } = await api('/bookings/' + encodeURIComponent(id), { method: 'DELETE' });
+        if (status === 200) {
+          loadMyBookingsAll();
+          loadSlots();
+        } else {
+          notice('lookup-notice', (data && data.error) || 'Cancel failed (' + status + ')', true);
+        }
+      });
+    });
+  }
+
+  function loadMyBookingsAll() {
+    document.getElementById('my-bookings').innerHTML = '';
+    loadMyBookings(null);
+  }
+
+  document.getElementById('more-btn').addEventListener('click', () => {
+    if (nextCursor) loadMyBookings(nextCursor);
+  });
+
+  loadSlots();
+</script>
+</body>
+</html>
